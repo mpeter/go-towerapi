@@ -1,0 +1,19 @@
+<component name="libraryTable">
+  <library name="GOPATH &lt;godo&gt;">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/../../../launchpad.net" />
+      <root url="file://$PROJECT_DIR$/../../../golang.org" />
+      <root url="file://$PROJECT_DIR$/../.." />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../../../launchpad.net" />
+      <root url="file://$PROJECT_DIR$/../../../golang.org" />
+      <root url="file://$PROJECT_DIR$/../.." />
+    </SOURCES>
+    <excluded>
+      <root url="file://$PROJECT_DIR$/../godo" />
+      <root url="file://$PROJECT_DIR$" />
+    </excluded>
+  </library>
+</component>
