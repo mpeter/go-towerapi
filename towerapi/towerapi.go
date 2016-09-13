@@ -2,10 +2,15 @@ package towerapi
 
 import (
 	"fmt"
-	"github.com/dghubble/sling"
-	s "github.com/mpeter/go-towerapi/towerapi/services"
 	"net/http"
 	"net/url"
+
+	"github.com/dghubble/sling"
+	"github.com/mpeter/go-towerapi/towerapi/authtoken"
+	"github.com/mpeter/go-towerapi/towerapi/hosts"
+	"github.com/mpeter/go-towerapi/towerapi/inventories"
+	"github.com/mpeter/go-towerapi/towerapi/organizations"
+	"log"
 )
 
 const (
@@ -32,60 +37,48 @@ type Client struct {
 	Endpoint *url.URL
 
 	// AuthToken obtained from calling Ansible Tower API /authtoken/ endpoint
-	Token AuthToken
+	Token *authtoken.AuthToken
 
 	// User agent for client
 	UserAgent string
 
 	// Services used for communicating with the API
-	ActivityStream        *s.ActivityStreamService
-	AdHocCommands         *s.AdHocCommandsService
-	AuthToken             *s.AuthTokenService
-	Config                *s.ConfigService
-	Credentials           *s.CredentialsService
-	Dashboard             *s.DashboardService
-	Groups                *s.GroupsService
-	Hosts                 *s.HostsService
-	Inventories           *s.InventoriesService
-	InventoryScripts      *s.InventoryScriptsService
-	InventorySources      *s.InventorySourcesService
-	JobEvents             *s.JobEventsService
-	JobTemplates          *s.JobTemplatesService
-	Jobs                  *s.JobsService
-	Labels                *s.LabelsService
-	Me                    *s.MeService
-	NotificationTemplates *s.NotificationTemplatesService
-	Notifications         *s.NotificationsService
-	Organizations         *s.OrganizationsService
-	Ping                  *s.PingService
-	Projects              *s.ProjectsService
-	Roles                 *s.RolesService
-	Schedules             *s.SchedulesService
-	SystemJobTemplates    *s.SystemJobTemplatesService
-	SystemJobs            *s.SystemJobsService
-	Teams                 *s.TeamsService
-	UnifiedJobTemplates   *s.UnifiedJobTemplatesService
-	UnifiedJobs           *s.UnifiedJobsService
-	Users                 *s.UsersService
+	//ActivityStream        *ActivityStreamService
+	//AdHocCommands         *AdHocCommandsService
+	AuthToken *authtoken.Service
+	//Config                *ConfigService
+	//Credentials           *CredentialsService
+	//Dashboard             *DashboardService
+	//Groups                *GroupsService
+	Hosts       *hosts.Service
+	Inventories *inventories.Service
+	//InventoryScripts      *InventoryScriptsService
+	//InventorySources      *InventorySourcesService
+	//JobEvents             *JobEventsService
+	//JobTemplates          *JobTemplatesService
+	//Jobs                  *JobsService
+	//Labels                *LabelsService
+	//Me                    *MeService
+	//NotificationTemplates *NotificationTemplatesService
+	//Notifications         *NotificationsService
+	Organizations *organizations.Service
+	//Ping                  *PingService
+	//Projects              *ProjectsService
+	//Roles                 *RolesService
+	//Schedules             *SchedulesService
+	//SystemJobTemplates    *SystemJobTemplatesService
+	//SystemJobs            *SystemJobsService
+	//Teams                 *TeamsService
+	//UnifiedJobTemplates   *UnifiedJobTemplatesService
+	//UnifiedJobs           *UnifiedJobsService
+	//Users                 *UsersService
 
 	// Optional function called after every successful request made to the Tower APIs
-	onRequestCompleted RequestCompletionCallback
+	//onRequestCompleted RequestCompletionCallback
 }
 
 // RequestCompletionCallback defines the type of the request callback function
-type RequestCompletionCallback func(*http.Request, *http.Response)
-
-// Response is a Ansible Tower response. This wraps the standard http.Response returned from Ansible Tower.
-type Response struct {
-	*http.Response
-}
-
-// An ErrorResponse reports the error caused by an API request
-type ErrorResponse struct {
-	// HTTP response that caused this error
-	Response *http.Response
-	All      []string `json:"__all__"`
-}
+//type RequestCompletionCallback func(*http.Request, *http.Response)
 
 func NewClient(httpClient *http.Client, endpoint string, username string, password string) (*Client, error) {
 
@@ -99,16 +92,19 @@ func NewClient(httpClient *http.Client, endpoint string, username string, passwo
 	}
 	base := sling.New().Client(httpClient).Base(endpoint)
 
-	body := &AuthTokenCreateRequest{
+	body := &authtoken.CreateRequest{
 		Username: username,
 		Password: password,
 	}
-	authToken := new(AuthToken)
-	errorResponse := new(ErrorResponse)
-	_, err = base.Post("authtoken/").BodyJSON(body).ReceiveSuccess(authToken, errorResponse)
-
+	ats := authtoken.NewService(base.New())
+	authToken, _, err := ats.Create(body)
+	if err != nil {
+		log.Printf("ERROR: authToken.Create: %+v", err.Error())
+		return nil, err
+	}
 	token := fmt.Sprintf("Token %s", authToken.Token)
-	base.Set("User-Agent", userAgent)
+	log.Printf("Token: %v", token)
+	//base.Set("User-Agent", userAgent)
 	base.Set("Authorization", token)
 
 	return &Client{
@@ -116,67 +112,37 @@ func NewClient(httpClient *http.Client, endpoint string, username string, passwo
 		Endpoint:  ep,
 		Username:  username,
 		Password:  password,
-		Token:     token,
+		Token:     authToken,
 		UserAgent: userAgent,
 
-		ActivityStream:   NewActivityStreamService(base.New()),
-		AdHocCommands:    NewAdHocCommandsService(base.New()),
-		AuthToken:        NewAuthTokenService(base.New()),
-		Config:           NewConfigService(base.New()),
-		Credentials:      NewCredentialsService(base.New()),
-		Dashboard:        NewDashboardService(base.New()),
-		Groups:           NewGroupsService(base.New()),
-		Hosts:            NewHostsService(base.New()),
-		Inventories:      NewInventoriesService(base.New()),
-		InventoryScripts: NewInventoryScriptsService(base.New()),
-		InventorySources: NewInventorySourcesService(base.New()),
-		JobEvents:        NewJobEventsService(base.New()),
-		JobTemplates:     NewJobTemplatesService(base.New()),
-		Jobs:             NewJobsService(base.New()),
-		Labels:           NewLablesService(base.New()),
-		Me:               NewMeService(base.New()),
-		NotificationTemplates: NewNotificationTemplatesService(base.New()),
-		Notifications:         NewNotificationsService(base.New()),
-		Organizations:         NewOrganizationsService(base.New()),
-		Ping:                  NewPingService(base.New()),
-		Projects:              NewProjectsService(base.New()),
-		Roles:                 NewRolesService(base.New()),
-		Schedules:             NewSchedulesService(base.New()),
-		SystemJobTemplates:    NewSystemJobTemplatesService(base.New()),
-		SystemJobs:            NewSystemJobsService(base.New()),
-		Teams:                 NewTeamsService(base.New()),
-		UnifiedJobTemplates:   NewUnifiedJobTemplatesService(base.New()),
-		UnifiedJobs:           NewUnifiedJobsService(base.New()),
-		Users:                 NewUsersService(base.New()),
-	}
-
-	return c, nil
-}
-
-func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Request, error) {
-
-}
-
-func (c *Client) List(root interface{}, opt *ListOptions, path string) (*Response, error) {
-
-	path, err := addOptions(path, opt)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := c.NewRequest("GET", path, nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := c.Do(req, root)
-
-	if err != nil {
-		return resp, err
-	}
-	return resp, err
-}
-
-func (r *ErrorResponse) Error() string {
-	return fmt.Sprintf("%v %v: %d %v",
-		r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.Message)
+		//ActivityStream:   NewActivityStreamService(base.New()),
+		//AdHocCommands:    NewAdHocCommandsService(base.New()),
+		AuthToken: ats,
+		//Config:           NewConfigService(base.New()),
+		//Credentials:      NewCredentialsService(base.New()),
+		//Dashboard:        NewDashboardService(base.New()),
+		//Groups:           NewGroupsService(base.New()),
+		Hosts:       hosts.NewService(base.New()),
+		Inventories: inventories.NewService(base.New()),
+		//InventoryScripts: NewInventoryScriptsService(base.New()),
+		//InventorySources: NewInventorySourcesService(base.New()),
+		//JobEvents:        NewJobEventsService(base.New()),
+		//JobTemplates:     NewJobTemplatesService(base.New()),
+		//Jobs:             NewJobsService(base.New()),
+		//Labels:           NewLabelsService(base.New()),
+		//Me:               NewMeService(base.New()),
+		//NotificationTemplates: NewNotificationTemplatesService(base.New()),
+		//Notifications:         NewNotificationsService(base.New()),
+		Organizations: organizations.NewService(base.New()),
+		//Ping:                  NewPingService(base.New()),
+		//Projects:              NewProjectsService(base.New()),
+		//Roles:                 NewRolesService(base.New()),
+		//Schedules:             NewSchedulesService(base.New()),
+		//SystemJobTemplates:    NewSystemJobTemplatesService(base.New()),
+		//SystemJobs:            NewSystemJobsService(base.New()),
+		//Teams:                 NewTeamsService(base.New()),
+		//UnifiedJobTemplates:   NewUnifiedJobTemplatesService(base.New()),
+		//UnifiedJobs:           NewUnifiedJobsService(base.New()),
+		//Users:                 NewUsersService(base.New()),
+	}, nil
 }

@@ -1,12 +1,15 @@
 #!/bin/bash
+set -e
+set -o
+set -x
 
-# Generates model structs -- WARNING: Hackery going on here. This is a conveience script only.
+# Generates model structs -- WARNING: Hackery going on here. This script is bad, and you should feel bad.
 #
 # Prerequisites:
 # httpie -- https://github.com/jkbrzt/httpie
 # gojson -- go get github.com/ChimeraCoder/gojson/gojson
 
-OPTS=`getopt -o vhns: --long endpoint,username,password: -n 'parse-options' -- "$@"`
+OPTS=`getopt -o eup: --long endpoint,username,password: -n 'parse-options' -- "$@"`
 
 if [ $? != 0 ] ; then echo "Failed parsing options." >&2 ; exit 1 ; fi
 echo "$OPTS"
@@ -30,11 +33,14 @@ echo TOWER_ENDPOINT=$TOWER_ENDPOINT
 echo TOWER_USERNAME=$TOWER_USERNAME
 echo TOWER_PASSWORD=$TOWER_PASSWORD
 
-TYPES=( Ping Config Me Dashboard Organizations Users Projects Teams
-Credentials Inventories Inventory_Scripts Inventory_Sources Groups Hosts
-Job_Templates Jobs Job_Events Ad_Hoc_Commands System_Job_Templates System_Jobs
-Schedules Roles Notification_Templates Notifications Labels
-Unified_Job_Templates Unified_Jobs Activity_Stream )
+# AuthToken
+LIST_TYPES=(Activity_Stream Dashboard Ping Config Me Ad_Hoc_Commands
+Organizations Users Projects Teams Credentials Inventories Inventory_Scripts
+Inventory_Sources Groups Hosts Job_Templates Jobs Job_Events
+System_Job_Templates System_Jobs Schedules Roles Notification_Templates
+Notifications Labels Unified_Job_Templates Unified_Jobs )
+
+#LIST_TYPES=( Dashboard )
 
 # Save the pwd before we run anything
 PRE_PWD=`pwd`
@@ -47,25 +53,36 @@ BUILD_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 # Derive the project name from the directory
 PROJECT="$(basename $BUILD_DIR)"
 
-#rm -rf $PWD/towerapi/model
-#mkdir -p $PWD/towerapi/model
+base_cmd="http --session=`date "+%Y%m%d"` --auth $TOWER_USERNAME:$TOWER_PASSWORD --body --pretty=format http://ansible-tower"
 
-for t in ${TYPES[*]};
+for t in ${LIST_TYPES[*]};
 do
-  echo Unified_Job_Templates | awk '{ print tolower($1) }'  
   name_uri=`echo "$t" | awk '{ print tolower($1) }'`
   name_struct=`echo $t | sed 's/_//g'`
-  #name_ucamel=`echo $name_struct
   name_lcamel=`echo $name_struct | perl -ne 'print lcfirst($_);'`
 
   echo "Generating model for $name_struct"
-  rm -f ../towerapi/services/$name_uri.go
-  cp skeleton_service.go ../towerapi/services/$name_uri.go
-  sed -i '' -e "s/{{name_uri}}/$name_uri/g" ../towerapi/services/$name_uri.go
-  sed -i '' -e "s/{{name_struct}}/$name_struct/g" ../towerapi/services/$name_uri.go
-  sed -i '' -e "s/{{name_ucamel}}/$name_ucamel/g" ../towerapi/services/$name_uri.go
-  sed -i '' -e "s/{{name_lcamel}}/$name_lcamel/g" ../towerapi/services/$name_uri.go
-#  http --auth $TOWER_USERNAME:$TOWER_PASSWORD --body --pretty=format $TOWER_ENDPOINT/$name_uri/ | gojson -name $name_struct -pkg model -o ../towerapi/model/$name_uri.go
-  #sleep 2
+  # Generate JSON Example for LIST type
+  entity_list_file="../towerapi/model/${name_uri}.json"
+  entity_list_json=`$base_cmd/api/v1/$name_uri/?page_size=1\&page=1\&order_by=id | jq .`
+  # re-create the output file
+  rm -f $entity_list_file && echo $entity_list_json > $entity_list_file
+  # Derive the URL and type of the result entry in list
+  entity_url=`jq 'try .results[0].url catch ""' $entity_list_file | tr -d '"'`
+  entity_type=`jq 'try .results[0].type catch ""' $entity_list_file | tr -d '"'`
+  # Derive struct name
+  entity_struct=`echo $entity_type | sed 's/_/ /g' | perl TitleCase.pl | sed 's/ //g'`
+  # Default null values to string
+  sed -i '' -e "s/null/\"string\"/g" $entity_list_file
+
+  # Generate JSON Example for CRUD type based on List type
+  entity_go_file="../towerapi/model/${name_uri}.go"
+  rm -f $entity_go_file
+  if [[ "${entity_type}" == "null" ]]; then
+    gojson -input $entity_list_file -name ${name_struct} -pkg towerapi -o $entity_go_file
+  else
+    jq 'del(.results[])' $entity_list_file | gojson -name ${name_struct} -pkg towerapi | sed -e "s/\[\]interface{}/\[\]${entity_struct}/" > $entity_go_file
+    $base_cmd$entity_url | jq . | sed -e "s/null/\"string\"/g" | gojson -name $entity_struct -pkg towerapi | sed -e 's/package towerapi//' >> $entity_go_file
+  fi
 done
 

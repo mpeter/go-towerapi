@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/go-towerapi.iml" filepath="$PROJECT_DIR$/go-towerapi.iml" />
       <module fileurl="file://$PROJECT_DIR$/../godo/godo.iml" filepath="$PROJECT_DIR$/../godo/godo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../terraform-provider-tower/terraform-provider-tower.iml" filepath="$PROJECT_DIR$/../terraform-provider-tower/terraform-provider-tower.iml" />
     </modules>
   </component>
 </project>
