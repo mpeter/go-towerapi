@@ -2,12 +2,13 @@
 
 # TowerAPI
 
+WORK IN PROGRESS
+
 TowerAPI is a Go client library for accessing the Ansible Tower V1 API.
 
-You can view the client API docs here: [http://go-towerapic.org/github.com/mpeter/go-towerapi](http://go-towerapic.org/github.com/mpeter/go-towerapi)
+You can view the client API docs here: [http://godoc.org/github.com/mpeter/go-towerapi](http://godoc.org/github.com/mpeter/go-towerapi)
 
 You can view Ansible Tower API docs here: [http://docs.ansible.com/ansible-tower/latest/html/towerapi/index.html](http://docs.ansible.com/ansible-tower/latest/html/towerapi/index.html)
-
 
 ## Usage
 
@@ -27,108 +28,65 @@ inside the Ansible Tower Control GUI.
 You can then use your token to create a new client:
 
 ```go
-import "golang.org/x/oauth2"
+import (
+  "net/http"
+  "github.com/mpeter/go-towerapi/towerapi"
+)
 
-pat := "mytoken"
-type TokenSource struct {
-    AccessToken string
+type Config struct {
+  Endpoint string
+  Username string
+  Password string
 }
 
-func (t *TokenSource) Token() (*oauth2.Token, error) {
-    token := &oauth2.Token{
-        AccessToken: t.AccessToken,
-    }
-    return token, nil
+func (c *Config) NewClient() (*towerapi.Client, error) {
+  config := &towerapi.ClientConfig{
+    Endpoint = c.Endpoint,
+    Username = c.Username,
+    Password = c.Password,
+  }
+
+  return towerapi.NewClient(http.DefaultClient, config)
 }
 
-tokenSource := &TokenSource{
-    AccessToken: pat,
-}
-oauthClient := oauth2.NewClient(oauth2.NoContext, tokenSource)
-client := go-towerapi.NewClient(oauthClient)
 ```
-
 ## Examples
 
-
-To create a new Inventory:
+To create a new Organization:
 
 ```go
-dropletName := "super-cool-droplet"
+	config := new(towerapi.ClientConfig)
+	config.Endpoint = c.Endpoint
+	config.Password = c.Password
+	config.Username = c.Username
 
-createRequest := &go-towerapi.DropletCreateRequest{
-    Name:   dropletName,
-    Region: "nyc3",
-    Size:   "512mb",
-    Image: go-towerapi.DropletCreateImage{
-        Slug: "ubuntu-14-04-x64",
-    },
-}
+	//return towerapi.NewClient(http.DefaultClient, config)
 
-newDroplet, _, err := client.Droplets.Create(createRequest)
-
-if err != nil {
-    fmt.Printf("Something bad happened: %s\n\n", err)
-    return err
-}
+	api, err := towerapi.NewClient(http.DefaultClient, config)
+	request := &organizations.Request{
+		Name: "Org Name",
+		Description: "Org Description",
+	}
+	org, resp, err := api.Organizations.Create(request)
+	if err != nil {
+		fmt.Errorf("ERROR: Organization.Create: %v", err)
+	}
+	fmt.Printf("Organization Struct: %v", org)
+	fmt.Printf("Organization Response: %v", resp)
 ```
 
 ### Pagination
 
 If a list of items is paginated by the API, you must request pages individually. For example, to fetch all Droplets:
 
-```go
-func DropletList(client *go-towerapi.Client) ([]go-towerapi.Droplet, error) {
-    // create a list to hold our droplets
-    list := []go-towerapi.Droplet{}
+TBD
 
-    // create options. initially, these will be blank
-    opt := &go-towerapi.ListOptions{}
-    for {
-        droplets, resp, err := client.Droplets.List(opt)
-        if err != nil {
-            return nil, err
-        }
+## Versioning 
 
-        // append the current page's droplets to our list
-        for _, d := range droplets {
-            list = append(list, d)
-        }
-
-        // if we are at the last page, break out the for loop
-        if resp.Links == nil || resp.Links.IsLastPage() {
-            break
-        }
-
-        page, err := resp.Links.CurrentPage()
-        if err != nil {
-            return nil, err
-        }
-
-        // set the page we want for the next request
-        opt.Page = page + 1
-    }
-
-    return list, nil
-}
-```
-
-## Versioning
-
-Each version of the client is tagged and the version is updated accordingly.
-
-Since Go does not have a built-in versioning, a package management tool is
-recommended - a good one that works with git tags is
-[gopkg.in](http://labix.org/gopkg.in).
-
-To see the list of past versions, run `git tag`.
-
+TBD
 
 ## Documentation
-
-For a comprehensive list of examples, check out the [API documentation](https://developers.digitalocean.com/documentation/v2/).
-
-For details on all the functionality in this library, see the [GoDoc](http://go-towerapic.org/github.com/mpeter/go-towerapi) documentation.
+For details on all the functionality in this library, see the [GoDoc](http://godoc.org/github.com/mpeter/go-towerapi) documentation.
 
 
 ## Contributing

@@ -49,7 +49,6 @@ _testmain.go
 .idea/sqlDataSources.xml
 .idea/dynamic.xml
 .idea/uiDesigner.xml
-
 # Gradle:
 .idea/gradle.xml
 .idea/libraries/
@@ -65,7 +64,8 @@ _testmain.go
 
 # IntelliJ
 /out/
-
+*.iml
+.idea/*
 # mpeltonen/sbt-idea plugin
 .idea_modules/
 

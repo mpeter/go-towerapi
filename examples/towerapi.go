@@ -22,7 +22,13 @@ func main() {
 	if len(endpoint) == 0 || len(username) == 0 || len(password) == 0 {
 		log.Fatal("Environment variable(s) not set\n")
 	}
-	client, err := towerapi.NewClient(http.DefaultClient, endpoint, username, password)
+	config := &towerapi.ClientConfig{
+		Endpoint: endpoint,
+		Username: username,
+		Password: password,
+	}
+	client, err := towerapi.NewClient(http.DefaultClient, config)
+	err = client.Login()
 	if err != nil {
 		log.Fatalf("towerapi.NewClient: %s", err)
 	}

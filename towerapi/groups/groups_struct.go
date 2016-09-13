@@ -1,4 +1,4 @@
-package towerapi
+package groups
 
 type Groups struct {
 	Count    int     `json:"count"`
