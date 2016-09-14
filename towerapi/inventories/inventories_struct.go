@@ -1,5 +1,14 @@
 package inventories
 
+// Request represents a request to create a new key.
+type Request struct {
+	ID           string `json:"-"`
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+	Organization int    `json:"organization"`
+	Variables    string `json:"variables" yaml:"variables"`
+}
+
 type Inventories struct {
 	Count    int         `json:"count"`
 	Next     string      `json:"next"`

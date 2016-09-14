@@ -1,9 +1,8 @@
 package authtoken
 
 import (
-	"github.com/dghubble/sling"
-	"github.com/mpeter/go-towerapi/towerapi/base"
-	"net/http"
+	"github.com/mpeter/go-towerapi/towerapi/errors"
+	"github.com/mpeter/sling"
 )
 
 const basePath = "authtoken/"
@@ -22,14 +21,10 @@ func NewService(sling *sling.Sling) *Service {
 	}
 }
 
-func (s *Service) Create(r *CreateRequest) (*AuthToken, *http.Response, error) {
-	var token *AuthToken
-	var towerError *base.TowerError
-	response, err := s.sling.New().Post("").BodyJSON(r).Receive(&token, &towerError)
-	if err == nil {
-		if towerError != nil {
-			err = towerError
-		}
-	}
-	return token, response, err
+// Create passes credentials and returns a token
+func (s *Service) Create(r *CreateRequest) (*AuthToken, error) {
+	token := new(AuthToken)
+	apierr := new(errors.APIError)
+	_, err := s.sling.New().Post("").BodyJSON(r).Receive(token, apierr)
+	return token, errors.BuildError(err, apierr)
 }

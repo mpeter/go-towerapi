@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dghubble/sling"
 	"github.com/mpeter/go-towerapi/towerapi/authtoken"
+	"github.com/mpeter/go-towerapi/towerapi/groups"
 	"github.com/mpeter/go-towerapi/towerapi/hosts"
 	"github.com/mpeter/go-towerapi/towerapi/inventories"
 	"github.com/mpeter/go-towerapi/towerapi/organizations"
+	"github.com/mpeter/sling"
 )
 
 const (
@@ -36,13 +37,13 @@ type Client struct {
 	Hosts         *hosts.Service
 	Inventories   *inventories.Service
 	Organizations *organizations.Service
+	Groups        *groups.Service
 
 	//ActivityStream        *ActivityStreamService
 	//AdHocCommands         *AdHocCommandsService
 	//Config                *ConfigService
 	//Credentials           *CredentialsService
 	//Dashboard             *DashboardService
-	//Groups                *GroupsService
 	//InventoryScripts      *InventoryScriptsService
 	//InventorySources      *InventorySourcesService
 	//JobEvents             *JobEventsService
@@ -88,7 +89,7 @@ func NewClient(httpClient *http.Client, c *ClientConfig) (*Client, error) {
 		Password: c.Password,
 	}
 	ats := authtoken.NewService(base)
-	at, _, err := ats.Create(body)
+	at, err := ats.Create(body)
 	if err != nil {
 		return nil, fmt.Errorf("ERROR: Error Creating Token: %+v", err.Error())
 	}
@@ -103,13 +104,13 @@ func NewClient(httpClient *http.Client, c *ClientConfig) (*Client, error) {
 		Hosts:         hosts.NewService(base.New()),
 		Inventories:   inventories.NewService(base.New()),
 		Organizations: organizations.NewService(base.New()),
+		Groups:        groups.NewService(base.New()),
 
 		//ActivityStream:   NewActivityStreamService(base),
 		//AdHocCommands:    NewAdHocCommandsService(base),
 		//Config:           NewConfigService(base),
 		//Credentials:      NewCredentialsService(base),
 		//Dashboard:        NewDashboardService(base),
-		//Groups:           NewGroupsService(base),
 		//InventoryScripts: NewInventoryScriptsService(base),
 		//InventorySources: NewInventorySourcesService(base),
 		//JobEvents:        NewJobEventsService(base),
@@ -131,4 +132,3 @@ func NewClient(httpClient *http.Client, c *ClientConfig) (*Client, error) {
 		//Users:                 NewUsersService(base),
 	}, nil
 }
-

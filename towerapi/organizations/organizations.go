@@ -2,10 +2,10 @@ package organizations
 
 import (
 	"fmt"
-	"net/http"
 
-	"github.com/dghubble/sling"
-	"github.com/mpeter/go-towerapi/towerapi/base"
+	"github.com/mpeter/go-towerapi/towerapi/errors"
+	"github.com/mpeter/go-towerapi/towerapi/params"
+	"github.com/mpeter/sling"
 )
 
 const basePath = "organizations/"
@@ -24,81 +24,63 @@ func NewService(sling *sling.Sling) *Service {
 	}
 }
 
-// Request represents a request to create a new key.
-type Request struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-}
-
 // Create creates a new Organization
-func (s *Service) Create(r *Request) (*Organization, *http.Response, error) {
+func (s *Service) Create(r *Request) (*Organization, error) {
 	organization := new(Organization)
-	towerError := new(base.TowerError)
-	response, err := s.sling.New().Post("").BodyJSON(r).Receive(organization, towerError)
-
-	return organization, response, err
+	apierr := new(errors.APIError)
+	_, err := s.sling.New().Post("").BodyJSON(r).Receive(organization, apierr)
+	return organization, errors.BuildError(err, apierr)
 }
 
 // Updates modifies an existing organization
-func (s *Service) Update(id int, r *Request) (*Organization, *http.Response, error) {
+func (s *Service) Update(r *Request) (*Organization, error) {
 	organization := new(Organization)
-	towerError := new(base.TowerError)
-	path := fmt.Sprintf("%d/", id)
-	response, err := s.sling.New().Put(path).BodyJSON(r).Receive(organization, towerError)
-	return organization, response, err
+	apierr := new(errors.APIError)
+	_, err := s.sling.New().Put(r.ID+"/").BodyJSON(r).Receive(organization, apierr)
+	return organization, errors.BuildError(err, apierr)
 }
 
-func (s *Service) Delete(id int) (*http.Response, error) {
-	path := fmt.Sprintf("%d/", id)
-	response, err := s.sling.New().Delete(path).ReceiveSuccess(nil)
-	return response, err
+func (s *Service) Delete(id string) error {
+	_, err := s.sling.New().Delete(id + "/").ReceiveSuccess(nil)
+	return errors.BuildError(err, nil)
 }
 
-func (s *Service) List() ([]Organization, *http.Response, error) {
+func (s *Service) List() ([]Organization, error) {
 	organizations := new(Organizations)
-	towerError := new(base.TowerError)
-	response, err := s.sling.New().Get("").Receive(organizations, towerError)
-	return organizations.Results, response, err
+	apierr := new(errors.APIError)
+	_, err := s.sling.New().Get("").Receive(organizations, apierr)
+	return organizations.Results, errors.BuildError(err, apierr)
 }
 
-func (s *Service) ListByName(name string) ([]Organization, *http.Response, error) {
+func (s *Service) ListByName(name string) ([]Organization, error) {
 	organizations := new(Organizations)
-	towerError := new(base.TowerError)
-	listParams := &base.ListParams{Name: name}
-	response, err := s.sling.New().Get("").QueryStruct(listParams).Receive(organizations, towerError)
-	return organizations.Results, response, err
+	apierr := new(errors.APIError)
+	params := &params.ListParams{Name: name}
+	_, err := s.sling.New().Get("").QueryStruct(params).Receive(organizations, apierr)
+	return organizations.Results, errors.BuildError(err, apierr)
 }
 
-func (s *Service) Exists(id int) (bool, *http.Response, error) {
-	var exists bool = false
-	inv, response, err := s.GetByID(id)
-	if inv == nil {
-		exists = true
-	}
-	return exists, response, err
-}
-
-func (s *Service) GetByName(name string) (*Organization, *http.Response, error) {
+func (s *Service) GetByName(name string) (*Organization, error) {
 	organizations := new(Organizations)
-	towerError := new(base.TowerError)
-	listParams := &base.ListParams{Name: name}
-	response, err := s.sling.New().Get("").QueryStruct(listParams).Receive(organizations, towerError)
-	if err != nil {
-		return nil, response, fmt.Errorf("Unable to search by Name: %v", err)
+	apierr := new(errors.APIError)
+
+	params := &params.ListParams{Name: name}
+	_, err := s.sling.New().Get("").QueryStruct(params).Receive(organizations, apierr)
+	if err := errors.BuildError(err, apierr); err != nil {
+		return nil, err
 	}
 	if organizations.Count == 0 {
-		return nil, response, nil
+		return nil, nil
 	} else if organizations.Count > 1 {
-		return nil, response, fmt.Errorf("Exact search returned more than 1 result, shouldn't happen: %v", err)
+		return nil, fmt.Errorf("Exact search returned more than 1 result for %s, should never happen", name)
 	}
-	results := &organizations.Results[0]
-	return results, response, nil
+	results := organizations.Results[0]
+	return &results, nil
 }
 
-func (s *Service) GetByID(id int) (*Organization, *http.Response, error) {
+func (s *Service) GetByID(id string) (*Organization, error) {
 	organization := new(Organization)
-	towerError := new(base.TowerError)
-	path := fmt.Sprintf("%d/", id)
-	response, err := s.sling.New().Get(path).Receive(organization, towerError)
-	return organization, response, err
+	apierr := new(errors.APIError)
+	_, err := s.sling.New().Get(id+"/").Receive(organization, apierr)
+	return organization, errors.BuildError(err, apierr)
 }

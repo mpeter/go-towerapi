@@ -1,4 +1,4 @@
-package base
+package params
 
 type ListParams struct {
 	OrderBy  string `url:"order_by,omitempty"`

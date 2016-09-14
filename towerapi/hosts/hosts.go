@@ -2,12 +2,10 @@ package hosts
 
 import (
 	"fmt"
-	"net/http"
 
-	"github.com/dghubble/sling"
-	"github.com/mpeter/go-towerapi/towerapi/base"
-	//"github.com/go-yaml/yaml"
-	//	"strings"
+	"github.com/mpeter/go-towerapi/towerapi/errors"
+	"github.com/mpeter/go-towerapi/towerapi/params"
+	"github.com/mpeter/sling"
 )
 
 const basePath = "hosts/"
@@ -26,85 +24,63 @@ func NewService(sling *sling.Sling) *Service {
 	}
 }
 
-// Request represents a request to create a new key.
-type Request struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Inventory   int    `json:"inventory"`
-	Enabled     bool   `json:"enabled"`
-	InstanceID  string `json:"instance_id"`
-	Variables   string `json:"variables" yaml:"variables"`
-}
-
 // Create creates a new Host
-func (s *Service) Create(r *Request) (*Host, *http.Response, error) {
+func (s *Service) Create(r *Request) (*Host, error) {
 	host := new(Host)
-	towerError := new(base.TowerError)
-	response, err := s.sling.New().Post("").BodyJSON(r).Receive(host, towerError)
-
-	return host, response, err
+	apierr := new(errors.APIError)
+	_, err := s.sling.New().Post("").BodyJSON(r).Receive(host, apierr)
+	return host, errors.BuildError(err, apierr)
 }
 
 // Updates modifies an existing host
-func (s *Service) Update(id int, r *Request) (*Host, *http.Response, error) {
+func (s *Service) Update(r *Request) (*Host, error) {
 	host := new(Host)
-	towerError := new(base.TowerError)
-	path := fmt.Sprintf("%d/", id)
-	response, err := s.sling.New().Put(path).BodyJSON(r).Receive(host, towerError)
-	return host, response, err
+	apierr := new(errors.APIError)
+	_, err := s.sling.New().Put(r.ID+"/").BodyJSON(r).Receive(host, apierr)
+	return host, errors.BuildError(err, apierr)
 }
 
-func (s *Service) Delete(id int) (*http.Response, error) {
-	path := fmt.Sprintf("%d/", id)
-	response, err := s.sling.New().Delete(path).ReceiveSuccess(nil)
-	return response, err
+func (s *Service) Delete(id string) error {
+	_, err := s.sling.New().Delete(id + "/").ReceiveSuccess(nil)
+	return errors.BuildError(err, nil)
 }
 
-func (s *Service) List() ([]Host, *http.Response, error) {
+func (s *Service) List() ([]Host, error) {
 	hosts := new(Hosts)
-	towerError := new(base.TowerError)
-	response, err := s.sling.New().Get("").Receive(hosts, towerError)
-	return hosts.Results, response, err
+	apierr := new(errors.APIError)
+	_, err := s.sling.New().Get("").Receive(hosts, apierr)
+	return hosts.Results, errors.BuildError(err, apierr)
 }
 
-func (s *Service) ListByName(name string) ([]Host, *http.Response, error) {
+func (s *Service) ListByName(name string) ([]Host, error) {
 	hosts := new(Hosts)
-	towerError := new(base.TowerError)
-	listParams := &base.ListParams{Name: name}
-	response, err := s.sling.New().Get("").QueryStruct(listParams).Receive(hosts, towerError)
-	return hosts.Results, response, err
+	apierr := new(errors.APIError)
+	params := &params.ListParams{Name: name}
+	_, err := s.sling.New().Get("").QueryStruct(params).Receive(hosts, apierr)
+	return hosts.Results, errors.BuildError(err, apierr)
 }
 
-func (s *Service) Exists(id int) (bool, *http.Response, error) {
-	var exists bool = false
-	inv, response, err := s.GetByID(id)
-	if inv == nil {
-		exists = true
-	}
-	return exists, response, err
-}
-
-func (s *Service) GetByName(name string) (*Host, *http.Response, error) {
+func (s *Service) GetByName(name string) (*Host, error) {
 	hosts := new(Hosts)
-	towerError := new(base.TowerError)
-	listParams := &base.ListParams{Name: name}
-	response, err := s.sling.New().Get("").QueryStruct(listParams).Receive(hosts, towerError)
-	if err != nil {
-		return nil, response, fmt.Errorf("Unable to search by Name: %v", err)
+	apierr := new(errors.APIError)
+
+	params := &params.ListParams{Name: name}
+	_, err := s.sling.New().Get("").QueryStruct(params).Receive(hosts, apierr)
+	if err := errors.BuildError(err, apierr); err != nil {
+		return nil, err
 	}
 	if hosts.Count == 0 {
-		return nil, response, nil
+		return nil, nil
 	} else if hosts.Count > 1 {
-		return nil, response, fmt.Errorf("Exact search returned more than 1 result, shouldn't happen: %v", err)
+		return nil, fmt.Errorf("Exact search returned more than 1 result for %s, should never happen", name)
 	}
 	results := &hosts.Results[0]
-	return results, response, nil
+	return results, nil
 }
 
-func (s *Service) GetByID(id int) (*Host, *http.Response, error) {
+func (s *Service) GetByID(id string) (*Host, error) {
 	host := new(Host)
-	towerError := new(base.TowerError)
-	path := fmt.Sprintf("%d/", id)
-	response, err := s.sling.New().Get(path).Receive(host, towerError)
-	return host, response, err
+	apierr := new(errors.APIError)
+	_, err := s.sling.New().Get(id+"/").Receive(host, apierr)
+	return host, errors.BuildError(err, apierr)
 }

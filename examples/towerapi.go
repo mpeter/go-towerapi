@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/mpeter/go-towerapi/towerapi"
-	"github.com/mpeter/go-towerapi/towerapi/inventories"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+
+	"github.com/mpeter/go-towerapi/towerapi"
+	"github.com/mpeter/go-towerapi/towerapi/inventories"
 )
 
 func main() {
@@ -28,7 +30,7 @@ func main() {
 		Password: password,
 	}
 	client, err := towerapi.NewClient(http.DefaultClient, config)
-	err = client.Login()
+
 	if err != nil {
 		log.Fatalf("towerapi.NewClient: %s", err)
 	}
@@ -38,28 +40,28 @@ func main() {
 		Organization: 1,
 		Variables:    "",
 	}
-	inventory, result, err := client.Inventories.Create(anInventory)
+	inventory, err := client.Inventories.Create(anInventory)
 	if err != nil {
 		fmt.Errorf("Inventories.Create returned error: %v", err)
 	}
-	log.Printf("Inventories.Create Inventory: %v Response: %v", inventory, result)
+	log.Printf("Inventories.Create Inventory: %v", inventory)
 
-	inventory1, _, err := client.Inventories.GetByID(inventory.ID)
+	inventory1, err := client.Inventories.GetByID(strconv.Itoa(inventory.ID))
 	log.Printf("Inventory ID: %d", inventory1.ID)
 
 	name := inventory1.Name
-	inventory2, _, err := client.Inventories.GetByName(name)
+	inventory2, err := client.Inventories.GetByName(name)
 	log.Printf("Inventory Name: %s", inventory2.Name)
 
 	anInventory.Description = "changed description"
-	inventory3, _, err := client.Inventories.Update(inventory2.ID, anInventory)
+	inventory3, err := client.Inventories.Update(anInventory)
 	log.Printf("Inventory Description: %s", inventory3.Description)
 
-	client.Inventories.Delete(inventory3.ID)
-	inventory4, result, err := client.Inventories.Create(anInventory)
+	client.Inventories.Delete(strconv.Itoa(inventory3.ID))
+	inventory4, err := client.Inventories.Create(anInventory)
 	log.Printf("Inventory Name (After Delete): %s", inventory4.Name)
 
 	// Cleanup
-	client.Inventories.Delete(inventory4.ID)
+	client.Inventories.Delete(strconv.Itoa(inventory4.ID))
 
 }

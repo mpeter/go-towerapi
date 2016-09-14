@@ -1,5 +1,13 @@
 package groups
 
+type Request struct {
+	ID          string `json:"-"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Inventory   int    `json:"inventory"`
+	Variables   string `json:"variables" yaml:"variables"`
+}
+
 type Groups struct {
 	Count    int     `json:"count"`
 	Next     string  `json:"next"`

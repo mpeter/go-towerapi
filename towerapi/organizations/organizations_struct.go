@@ -1,5 +1,12 @@
 package organizations
 
+// Request represents a request to create a new key.
+type Request struct {
+	ID          string `json:"-"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
 type Organizations struct {
 	Count    int            `json:"count"`
 	Next     string         `json:"next"`

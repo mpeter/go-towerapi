@@ -1,5 +1,15 @@
 package hosts
 
+type Request struct {
+	ID          string `json:"-"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Inventory   int    `json:"inventory"`
+	Enabled     bool   `json:"enabled"`
+	InstanceID  string `json:"instance_id"`
+	Variables   string `json:"variables" yaml:"variables"`
+}
+
 type Hosts struct {
 	Count    int    `json:"count"`
 	Next     string `json:"next"`
