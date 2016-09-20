@@ -6,6 +6,7 @@ import (
 	"github.com/mpeter/go-towerapi/towerapi/errors"
 	"github.com/mpeter/go-towerapi/towerapi/params"
 	"github.com/mpeter/sling"
+	"reflect"
 )
 
 const basePath = "job_templates/"
@@ -25,7 +26,21 @@ func NewService(sling *sling.Sling) *Service {
 }
 
 // Create creates a new JobTemplate
-func (s *Service) Create(r *Request) (*JobTemplate, error) {
+func create(s *sling.Sling, r interface{}, suc interface{}) (success interface{}, failure error) {
+	result := reflect.New(reflect.TypeOf(success))
+	apierr := new(errors.APIError)
+	_, err := s.New().Post("").BodyJSON(r).Receive(result, apierr)
+	return success, errors.BuildError(err, apierr).(error)
+}
+
+// Create creates a new JobTemplate
+func (s *Service) Create(r *Request) (success *JobTemplate, e error) {
+	//if res,err := create(s.sling, r, success) ; err != nil {
+	//	return nil, err
+	//} else {
+	//	return res.(*JobTemplate), nil
+	//}
+
 	job_template := new(JobTemplate)
 	apierr := new(errors.APIError)
 	_, err := s.sling.New().Post("").BodyJSON(r).Receive(job_template, apierr)

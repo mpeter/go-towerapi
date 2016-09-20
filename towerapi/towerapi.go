@@ -1,15 +1,19 @@
 package towerapi
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/mpeter/go-towerapi/towerapi/authtoken"
 	"github.com/mpeter/go-towerapi/towerapi/groups"
 	"github.com/mpeter/go-towerapi/towerapi/hosts"
 	"github.com/mpeter/go-towerapi/towerapi/inventories"
+	"github.com/mpeter/go-towerapi/towerapi/job_templates"
 	"github.com/mpeter/go-towerapi/towerapi/organizations"
 	"github.com/mpeter/sling"
+	"github.com/mpeter/go-towerapi/towerapi/credentials"
+	"os"
+	"github.com/mpeter/go-towerapi/towerapi/errors"
+	"github.com/mpeter/go-towerapi/towerapi/projects"
 )
 
 const (
@@ -34,20 +38,21 @@ type Client struct {
 
 	// Services used for communicating with the API
 	AuthToken     *authtoken.Service
+	Credentials   *credentials.Service
+	Groups        *groups.Service
 	Hosts         *hosts.Service
 	Inventories   *inventories.Service
+	JobTemplates  *job_templates.Service
 	Organizations *organizations.Service
-	Groups        *groups.Service
+	Projects      *projects.Service
 
 	//ActivityStream        *ActivityStreamService
 	//AdHocCommands         *AdHocCommandsService
 	//Config                *ConfigService
-	//Credentials           *CredentialsService
 	//Dashboard             *DashboardService
 	//InventoryScripts      *InventoryScriptsService
 	//InventorySources      *InventorySourcesService
 	//JobEvents             *JobEventsService
-	//JobTemplates          *JobTemplatesService
 	//Jobs                  *JobsService
 	//Labels                *LabelsService
 	//Me                    *MeService
@@ -64,64 +69,90 @@ type Client struct {
 	//UnifiedJobs           *UnifiedJobsService
 	//Users                 *UsersService
 
-	// Optional function called after every successful request made to the Tower APIs
-	//onRequestCompleted RequestCompletionCallback
 }
 
-// RequestCompletionCallback defines the type of the request callback function
-//type RequestCompletionCallback func(*http.Request, *http.Response)
-
-type ClientConfig struct {
+type Config struct {
 	Endpoint string
 	Username string
 	Password string
+	AuthToken *authtoken.AuthToken
+	HttpClient *http.Client
 }
 
-func NewClient(httpClient *http.Client, c *ClientConfig) (*Client, error) {
+func DefaultConfig() *Config {
 
-	if httpClient == nil {
-		httpClient = http.DefaultClient
+	config := &Config{
+		Endpoint: "http://127.0.0.1/api/v1/",
+		Username: "admin",
+		Password: "",
+		AuthToken: nil,
+		HttpClient: http.DefaultClient,
 	}
 
-	base := sling.New().Client(httpClient).Base(c.Endpoint)
+	if e := os.Getenv("TOWER_ENDOINT"); e != "" {
+		config.Endpoint = e
+	}
+	if u := os.Getenv("TOWER_USERNAME"); u != "" {
+		config.Username = u
+	}
+	if p := os.Getenv("TOWER_PASSWORD"); p != "" {
+		config.Password = p
+	}
+
+	return config
+}
+
+func (c *Config) LoadAndValidate() error {
+
+	base := sling.New().Client(c.HttpClient).Base(c.Endpoint)
 	body := &authtoken.CreateRequest{
 		Username: c.Username,
 		Password: c.Password,
 	}
-	ats := authtoken.NewService(base)
-	at, err := ats.Create(body)
-	if err != nil {
-		return nil, fmt.Errorf("ERROR: Error Creating Token: %+v", err.Error())
+	token := new(authtoken.AuthToken)
+	apierr := new(errors.APIError)
+	_, err := base.Post("authtoken/").BodyJSON(body).Receive(token, apierr)
+	if error := errors.BuildError(err, apierr) ; error != nil {
+		return error
 	}
-	token := fmt.Sprintf("Token %s", at.Token)
-	base.Set("Authorization", token)
+	c.AuthToken = token
+	return nil
+}
+
+func NewClient(c *Config) (*Client, error) {
+
+	if c.HttpClient == nil {
+		c.HttpClient = http.DefaultClient
+	}
+
+	base := sling.New().Client(c.HttpClient).Base(c.Endpoint)
+	base.Set("Authorization", "Token "+c.AuthToken.Token)
 
 	return &Client{
 		sling:         base,
-		Token:         at,
-		UserAgent:     userAgent,
+
 		AuthToken:     authtoken.NewService(base.New()),
+		Credentials:   credentials.NewService(base.New()),
+		Groups:        groups.NewService(base.New()),
 		Hosts:         hosts.NewService(base.New()),
 		Inventories:   inventories.NewService(base.New()),
+		JobTemplates:  job_templates.NewService(base.New()),
 		Organizations: organizations.NewService(base.New()),
-		Groups:        groups.NewService(base.New()),
+		Projects:      projects.NewService(base.New()),
 
 		//ActivityStream:   NewActivityStreamService(base),
 		//AdHocCommands:    NewAdHocCommandsService(base),
 		//Config:           NewConfigService(base),
-		//Credentials:      NewCredentialsService(base),
 		//Dashboard:        NewDashboardService(base),
 		//InventoryScripts: NewInventoryScriptsService(base),
 		//InventorySources: NewInventorySourcesService(base),
 		//JobEvents:        NewJobEventsService(base),
-		//JobTemplates:     NewJobTemplatesService(base),
 		//Jobs:             NewJobsService(base),
 		//Labels:           NewLabelsService(base),
 		//Me:               NewMeService(base),
 		//NotificationTemplates: NewNotificationTemplatesService(base),
 		//Notifications:         NewNotificationsService(base),
 		//Ping:                  NewPingService(base),
-		//Projects:              NewProjectsService(base),
 		//Roles:                 NewRolesService(base),
 		//Schedules:             NewSchedulesService(base),
 		//SystemJobTemplates:    NewSystemJobTemplatesService(base),

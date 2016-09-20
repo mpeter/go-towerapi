@@ -5,7 +5,7 @@ type Request struct {
 	ID           string `json:"-"`
 	Name         string `json:"name"`
 	Description  string `json:"description"`
-	Organization int    `json:"organization"`
+	Organization *int   `json:"organization"`
 	Variables    string `json:"variables" yaml:"variables"`
 }
 

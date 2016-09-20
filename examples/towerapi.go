@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"strconv"
 
@@ -24,20 +23,21 @@ func main() {
 	if len(endpoint) == 0 || len(username) == 0 || len(password) == 0 {
 		log.Fatal("Environment variable(s) not set\n")
 	}
-	config := &towerapi.ClientConfig{
+	config := &towerapi.Config{
 		Endpoint: endpoint,
 		Username: username,
 		Password: password,
 	}
-	client, err := towerapi.NewClient(http.DefaultClient, config)
+	client, err := towerapi.NewClient(config)
 
 	if err != nil {
 		log.Fatalf("towerapi.NewClient: %s", err)
 	}
+	org := 1
 	anInventory := &inventories.Request{
 		Name:         "aname15",
 		Description:  "asdf",
-		Organization: 1,
+		Organization: &org,
 		Variables:    "",
 	}
 	inventory, err := client.Inventories.Create(anInventory)
