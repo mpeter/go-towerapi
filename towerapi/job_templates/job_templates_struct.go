@@ -1,7 +1,7 @@
 package job_templates
 
 type Request struct {
-	ID                    string    `json:"-"`
+	ID                    string `json:"-"`
 	Name                  string `json:"name"`
 	Description           string `json:"description"`
 	JobType               string `json:"job_type"`
@@ -106,14 +106,14 @@ type JobTemplate struct {
 		} `json:"cloud_credential"`
 		CreatedBy struct {
 			FirstName string `json:"first_name"`
-			ID        int   `json:"id"`
+			ID        int    `json:"id"`
 			LastName  string `json:"last_name"`
 			Username  string `json:"username"`
 		} `json:"created_by"`
 		Credential struct {
 			Cloud       bool   `json:"cloud"`
 			Description string `json:"description"`
-			ID          int   `json:"id"`
+			ID          int    `json:"id"`
 			Kind        string `json:"kind"`
 			Name        string `json:"name"`
 		} `json:"credential"`
@@ -123,7 +123,7 @@ type JobTemplate struct {
 			HasActiveFailures            bool   `json:"has_active_failures"`
 			HasInventorySources          bool   `json:"has_inventory_sources"`
 			HostsWithActiveFailures      int    `json:"hosts_with_active_failures"`
-			ID                           int   `json:"id"`
+			ID                           int    `json:"id"`
 			InventorySourcesWithFailures int    `json:"inventory_sources_with_failures"`
 			Name                         string `json:"name"`
 			TotalGroups                  int    `json:"total_groups"`
@@ -133,7 +133,7 @@ type JobTemplate struct {
 		Labels struct {
 			Count   int `json:"count"`
 			Results []struct {
-				ID   int   `json:"id"`
+				ID   int    `json:"id"`
 				Name string `json:"name"`
 			} `json:"results"`
 		} `json:"labels"`
@@ -141,55 +141,55 @@ type JobTemplate struct {
 			Description string `json:"description"`
 			Failed      bool   `json:"failed"`
 			Finished    string `json:"finished"`
-			ID          int   `json:"id"`
+			ID          int    `json:"id"`
 			Name        string `json:"name"`
 			Status      string `json:"status"`
 		} `json:"last_job"`
 		LastUpdate struct {
 			Description string `json:"description"`
 			Failed      bool   `json:"failed"`
-			ID          int   `json:"id"`
+			ID          int    `json:"id"`
 			Name        string `json:"name"`
 			Status      string `json:"status"`
 		} `json:"last_update"`
 		ModifiedBy struct {
 			FirstName string `json:"first_name"`
-			ID        int   `json:"id"`
+			ID        int    `json:"id"`
 			LastName  string `json:"last_name"`
 			Username  string `json:"username"`
 		} `json:"modified_by"`
 		NetworkCredential struct {
 			Description string `json:"description"`
-			ID          int   `json:"id"`
+			ID          int    `json:"id"`
 			Kind        string `json:"kind"`
 			Name        string `json:"name"`
 		} `json:"network_credential"`
 		ObjectRoles struct {
 			AdminRole struct {
 				Description string `json:"description"`
-				ID          int   `json:"id"`
+				ID          int    `json:"id"`
 				Name        string `json:"name"`
 			} `json:"admin_role"`
 			ExecuteRole struct {
 				Description string `json:"description"`
-				ID          int   `json:"id"`
+				ID          int    `json:"id"`
 				Name        string `json:"name"`
 			} `json:"execute_role"`
 			ReadRole struct {
 				Description string `json:"description"`
-				ID          int   `json:"id"`
+				ID          int    `json:"id"`
 				Name        string `json:"name"`
 			} `json:"read_role"`
 		} `json:"object_roles"`
 		Project struct {
 			Description string `json:"description"`
-			ID          int   `json:"id"`
+			ID          int    `json:"id"`
 			Name        string `json:"name"`
 			Status      string `json:"status"`
 		} `json:"project"`
 		RecentJobs []struct {
 			Finished string `json:"finished"`
-			ID       int   `json:"id"`
+			ID       int    `json:"id"`
 			Status   string `json:"status"`
 		} `json:"recent_jobs"`
 	} `json:"summary_fields"`

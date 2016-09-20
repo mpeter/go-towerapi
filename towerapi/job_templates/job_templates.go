@@ -3,10 +3,11 @@ package job_templates
 import (
 	"fmt"
 
+	"reflect"
+
 	"github.com/mpeter/go-towerapi/towerapi/errors"
 	"github.com/mpeter/go-towerapi/towerapi/params"
 	"github.com/mpeter/sling"
-	"reflect"
 )
 
 const basePath = "job_templates/"

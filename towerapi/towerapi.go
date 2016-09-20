@@ -3,17 +3,18 @@ package towerapi
 import (
 	"net/http"
 
+	"os"
+
 	"github.com/mpeter/go-towerapi/towerapi/authtoken"
+	"github.com/mpeter/go-towerapi/towerapi/credentials"
+	"github.com/mpeter/go-towerapi/towerapi/errors"
 	"github.com/mpeter/go-towerapi/towerapi/groups"
 	"github.com/mpeter/go-towerapi/towerapi/hosts"
 	"github.com/mpeter/go-towerapi/towerapi/inventories"
 	"github.com/mpeter/go-towerapi/towerapi/job_templates"
 	"github.com/mpeter/go-towerapi/towerapi/organizations"
-	"github.com/mpeter/sling"
-	"github.com/mpeter/go-towerapi/towerapi/credentials"
-	"os"
-	"github.com/mpeter/go-towerapi/towerapi/errors"
 	"github.com/mpeter/go-towerapi/towerapi/projects"
+	"github.com/mpeter/sling"
 )
 
 const (
@@ -72,20 +73,20 @@ type Client struct {
 }
 
 type Config struct {
-	Endpoint string
-	Username string
-	Password string
-	AuthToken *authtoken.AuthToken
+	Endpoint   string
+	Username   string
+	Password   string
+	AuthToken  *authtoken.AuthToken
 	HttpClient *http.Client
 }
 
 func DefaultConfig() *Config {
 
 	config := &Config{
-		Endpoint: "http://127.0.0.1/api/v1/",
-		Username: "admin",
-		Password: "",
-		AuthToken: nil,
+		Endpoint:   "http://127.0.0.1/api/v1/",
+		Username:   "admin",
+		Password:   "",
+		AuthToken:  nil,
 		HttpClient: http.DefaultClient,
 	}
 
@@ -112,7 +113,7 @@ func (c *Config) LoadAndValidate() error {
 	token := new(authtoken.AuthToken)
 	apierr := new(errors.APIError)
 	_, err := base.Post("authtoken/").BodyJSON(body).Receive(token, apierr)
-	if error := errors.BuildError(err, apierr) ; error != nil {
+	if error := errors.BuildError(err, apierr); error != nil {
 		return error
 	}
 	c.AuthToken = token
@@ -129,7 +130,7 @@ func NewClient(c *Config) (*Client, error) {
 	base.Set("Authorization", "Token "+c.AuthToken.Token)
 
 	return &Client{
-		sling:         base,
+		sling: base,
 
 		AuthToken:     authtoken.NewService(base.New()),
 		Credentials:   credentials.NewService(base.New()),

@@ -1,7 +1,7 @@
 package projects
 
 type Request struct {
-	ID                    string    `json:"-"`
+	ID                    string `json:"-"`
 	Name                  string `json:"name"`
 	Description           string `json:"description"`
 	LocalPath             string `json:"local_path"`
@@ -10,7 +10,7 @@ type Request struct {
 	ScmBranch             string `json:"scm_branch"`
 	ScmClean              bool   `json:"scm_clean"`
 	ScmDeleteOnUpdate     bool   `json:"scm_delete_on_update"`
-	Credential            *int    `json:"credential" mapstructure:"credential_id"`
+	Credential            *int   `json:"credential" mapstructure:"credential_id"`
 	Organization          *int   `json:"organization" mapstructure:"organization_id"`
 	ScmUpdateOnLaunch     bool   `json:"scm_update_on_launch"`
 	ScmUpdateCacheTimeout int    `json:"scm_update_cache_timeout"`

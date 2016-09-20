@@ -1,7 +1,7 @@
 package credentials
 
 type Request struct {
-	ID                string   `json:"-"`
+	ID                string `json:"-"`
 	Name              string `json:"name"`
 	Description       string `json:"description"`
 	Kind              string `json:"kind"`
